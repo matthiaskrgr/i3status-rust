@@ -27,3 +27,5 @@ progress = "0.2"
 
 [profile.release]
 lto = true
+
+#  cargo install --git https://github.com/matthiaskrgr/i3status-rust --branch fork  --force
