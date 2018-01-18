@@ -24,3 +24,6 @@ inotify = "0.5.0"
 # for profiling blocks
 cpuprofiler = "0.0.3"
 progress = "0.2"
+
+[profile.release]
+lto = true
