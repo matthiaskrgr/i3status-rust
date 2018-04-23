@@ -100,15 +100,15 @@ impl NetworkDevice {
         let mut ssid = String::new();
         // get the line that starts with "SSID:" ...
         for line in iw_output.unwrap().lines() {
-            if line.trim().starts_with("SSID:") {
+            if line.trim().starts_with("SSID: ") {
                 ssid.push_str(line);
             }
         }
 
-        let ssid = ssid.trim().to_string(); // remove whitespaces at start
+        let mut ssid = ssid.trim().to_string(); // remove whitespaces at start
         if ssid.starts_with("SSID: ") {
             // remove ths "SSID" so that only the id is left
-            ssid.replacen("SSID: ", "", 1);
+            ssid = ssid.replacen("SSID: ", "", 1);
             Ok(Some(ssid))
         } else {
             // SSID not found
@@ -122,19 +122,20 @@ impl NetworkDevice {
             return Ok(None);
         }
         let mut ip_output = Command::new("sh")
-            .args(&["-c", &format!("ip -oneline -family inet address show {} | sed -rn \"s/.*inet ([\\.0-9/]+).*/\\1/p\"", self.device)])
+            .args(&[
+                "-c",
+                &format!("ip -oneline -family inet address show {}", self.device),
+            ])
             .output()
             .block_error("net", "Failed to execute IP address query.")?
             .stdout;
+        ip_output.pop(); // Remove trailing newline.
+        let ip_output = String::from_utf8(ip_output).block_error("net", "Non-UTF8 SSID.");
 
-        if ip_output.is_empty() {
-            Ok(None)
-        } else {
-            ip_output.pop(); // Remove trailing newline.
-            String::from_utf8(ip_output)
-                .block_error("net", "Non-UTF8 IP address.")
-                .map(Some)
-        }
+        let ip_output = ip_output.unwrap();
+        let ip = ip_output.split_whitespace().into_iter().nth(3);
+        let ip = Some(ip.unwrap().to_string());
+        Ok(ip)
     }
 
     /// Queries the bitrate of this device (using `iwlist`)
@@ -146,7 +147,7 @@ impl NetworkDevice {
                 "Bitrate is only available for connected wireless devices.".to_string(),
             ));
         }
-        let mut bitrate_output = Command::new("sh")
+        let bitrate_output = Command::new("sh")
             .args(&[
                 "-c",
                 &format!(
@@ -157,14 +158,33 @@ impl NetworkDevice {
             .output()
             .block_error("net", "Failed to execute bitrate query.")?
             .stdout;
+        let text = String::from_utf8(bitrate_output).block_error("net", "Non-UTF8 bitrate");
 
-        if bitrate_output.is_empty() {
-            Ok(None)
+        let mut bitrate_line = String::new();
+        // get the line that starts with "SSID:" ...
+        for line in text.unwrap().lines() {
+            if line.trim().starts_with("tx bitrate") {
+                bitrate_line.push_str(line);
+            }
+        }
+        // remove \n
+        bitrate_line.pop();
+
+        if bitrate_line.is_empty() {
+            // parsing failure
+            return Ok(None);
+        }
+
+        let bitrate_vec = bitrate_line
+            .split_whitespace()
+            .into_iter()
+            .collect::<Vec<&str>>();
+        let mut string = String::new();
+        if bitrate_vec.len() >= 4 {
+            string.push_str(&format!("{} {}", bitrate_vec[2], bitrate_vec[3]));
+            Ok(Some(string))
         } else {
-            bitrate_output.pop(); // Remove trailing newline.
-            String::from_utf8(bitrate_output)
-                .block_error("net", "Non-UTF8 bitrate.")
-                .map(Some)
+            Ok(None)
         }
     }
 }
