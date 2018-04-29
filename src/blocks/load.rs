@@ -46,10 +46,17 @@ impl LoadConfig {
 impl ConfigBlock for Load {
     type Config = LoadConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
-        let text = TextWidget::new(config).with_icon("cogs").with_state(State::Info);
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
+        let text = TextWidget::new(config)
+            .with_icon("cogs")
+            .with_state(State::Info);
 
-        let f = File::open("/proc/cpuinfo").block_error("load", "Your system doesn't support /proc/cpuinfo")?;
+        let f = File::open("/proc/cpuinfo")
+            .block_error("load", "Your system doesn't support /proc/cpuinfo")?;
         let f = BufReader::new(f);
 
         let mut logical_cores = 0;
@@ -58,7 +65,9 @@ impl ConfigBlock for Load {
             // TODO: Does this value always represent the correct number of logical cores?
             if line.starts_with("siblings") {
                 let split: Vec<&str> = (&line).split(' ').collect();
-                logical_cores = split[1].parse::<u32>().block_error("load", "Invalid Cpu info format!")?;
+                logical_cores = split[1]
+                    .parse::<u32>()
+                    .block_error("load", "Invalid Cpu info format!")?;
                 break;
             }
         }
@@ -67,7 +76,8 @@ impl ConfigBlock for Load {
             id: Uuid::new_v4().simple().to_string(),
             logical_cores: logical_cores,
             update_interval: block_config.interval,
-            format: FormatTemplate::from_string(block_config.format).block_error("load", "Invalid format specified for load")?,
+            format: FormatTemplate::from_string(block_config.format)
+                .block_error("load", "Invalid format specified for load")?,
             text: text,
         })
     }
@@ -78,9 +88,13 @@ impl Block for Load {
         let mut f = OpenOptions::new()
             .read(true)
             .open("/proc/loadavg")
-            .block_error("load", "Your system does not support reading the load average from /proc/loadavg")?;
+            .block_error(
+                "load",
+                "Your system does not support reading the load average from /proc/loadavg",
+            )?;
         let mut loadavg = String::new();
-        f.read_to_string(&mut loadavg).block_error("load", "Failed to read the load average of your system!")?;
+        f.read_to_string(&mut loadavg)
+            .block_error("load", "Failed to read the load average of your system!")?;
 
         let split: Vec<&str> = (&loadavg).split(' ').collect();
 
@@ -88,8 +102,12 @@ impl Block for Load {
                           "{5m}" => split[1],
                           "{15m}" => split[2]);
 
-        let used_perc = values["{1m}"].parse::<f32>().block_error("load", "failed to parse float percentage")? / self.logical_cores as f32;
-        self.text.set_state(match_range!(used_perc, default: (State::Idle) {
+        let used_perc = values["{1m}"]
+            .parse::<f32>()
+            .block_error("load", "failed to parse float percentage")?
+            / self.logical_cores as f32;
+        self.text
+            .set_state(match_range!(used_perc, default: (State::Idle) {
                 0.0 ; 0.3 => State::Idle,
                 0.3 ; 0.6 => State::Info,
                 0.6 ; 0.9 => State::Warning

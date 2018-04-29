@@ -116,7 +116,10 @@ impl Block for Custom {
         let mut update = false;
 
         if let Some(ref on_click) = self.on_click {
-            Command::new(env::var("SHELL").unwrap_or("sh".to_owned())).args(&["-c", on_click]).output().ok();
+            Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+                .args(&["-c", on_click])
+                .output()
+                .ok();
             update = true;
         }
 

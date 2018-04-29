@@ -25,7 +25,11 @@ pub enum WeatherService {
     //     longitude: f64,
     //     units: Option<InputUnit>
     // },
-    OpenWeatherMap { api_key: String, city_id: String, units: OpenWeatherMapUnits },
+    OpenWeatherMap {
+        api_key: String,
+        city_id: String,
+        units: OpenWeatherMapUnits,
+    },
 }
 
 #[derive(Copy, Clone, Debug, Deserialize)]
@@ -47,7 +51,11 @@ pub struct Weather {
 impl Weather {
     fn update_weather(&mut self) -> Result<()> {
         match self.service {
-            WeatherService::OpenWeatherMap { ref api_key, ref city_id, ref units } => {
+            WeatherService::OpenWeatherMap {
+                ref api_key,
+                ref city_id,
+                ref units,
+            } => {
                 let output = Command::new("sh")
                     .args(&[
                         "-c",
@@ -73,34 +81,56 @@ impl Weather {
                     return Ok(());
                 }
 
-                let json: serde_json::value::Value = serde_json::from_str(&output).block_error("weather", "Failed to parse JSON response.")?;
+                let json: serde_json::value::Value = serde_json::from_str(&output)
+                    .block_error("weather", "Failed to parse JSON response.")?;
 
                 // Try to convert an API error into a block error.
                 if let Some(val) = json.get("message") {
-                    return Err(BlockError("weather".to_string(), format!("API Error: {}", val.as_str().unwrap())));
+                    return Err(BlockError(
+                        "weather".to_string(),
+                        format!("API Error: {}", val.as_str().unwrap()),
+                    ));
                 };
-                let raw_weather = match json.pointer("/weather/0/main").and_then(|v| v.as_str()).map(|s| s.to_string()) {
+                let raw_weather = match json.pointer("/weather/0/main")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                {
                     Some(v) => v,
                     None => {
-                        return Err(BlockError("weather".to_string(), "Malformed JSON.".to_string()));
+                        return Err(BlockError(
+                            "weather".to_string(),
+                            "Malformed JSON.".to_string(),
+                        ));
                     }
                 };
                 let raw_temp = match json.pointer("/main/temp").and_then(|v| v.as_f64()) {
                     Some(v) => v,
                     None => {
-                        return Err(BlockError("weather".to_string(), "Malformed JSON.".to_string()));
+                        return Err(BlockError(
+                            "weather".to_string(),
+                            "Malformed JSON.".to_string(),
+                        ));
                     }
                 };
                 let raw_wind = match json.pointer("/wind/speed").and_then(|v| v.as_f64()) {
                     Some(v) => v,
                     None => {
-                        return Err(BlockError("weather".to_string(), "Malformed JSON.".to_string()));
+                        return Err(BlockError(
+                            "weather".to_string(),
+                            "Malformed JSON.".to_string(),
+                        ));
                     }
                 };
-                let raw_location = match json.pointer("/name").and_then(|v| v.as_str()).map(|s| s.to_string()) {
+                let raw_location = match json.pointer("/name")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                {
                     Some(v) => v,
                     None => {
-                        return Err(BlockError("weather".to_string(), "Malformed JSON.".to_string()));
+                        return Err(BlockError(
+                            "weather".to_string(),
+                            "Malformed JSON.".to_string(),
+                        ));
                     }
                 };
 
@@ -146,7 +176,11 @@ impl WeatherConfig {
 impl ConfigBlock for Weather {
     type Config = WeatherConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
         Ok(Weather {
             id: id.clone(),

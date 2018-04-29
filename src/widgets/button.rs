@@ -86,7 +86,9 @@ impl ButtonWidget {
 
 impl I3BarWidget for ButtonWidget {
     fn to_string(&self) -> String {
-        self.cached_output.clone().unwrap_or_else(|| self.rendered.to_string())
+        self.cached_output
+            .clone()
+            .unwrap_or_else(|| self.rendered.to_string())
     }
 
     fn get_rendered(&self) -> &Value {

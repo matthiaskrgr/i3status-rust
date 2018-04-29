@@ -76,7 +76,11 @@ impl CpuConfig {
 impl ConfigBlock for Cpu {
     type Config = CpuConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         Ok(Cpu {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
@@ -93,12 +97,14 @@ impl ConfigBlock for Cpu {
 
 impl Block for Cpu {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let f = File::open("/proc/stat").block_error("cpu", "Your system doesn't support /proc/stat")?;
+        let f =
+            File::open("/proc/stat").block_error("cpu", "Your system doesn't support /proc/stat")?;
         let f = BufReader::new(f);
 
         let mut freq: f32 = 0.0;
         if self.frequency {
-            let freq_file = File::open("/proc/cpuinfo").block_error("cpu", "failed to read /proc/cpuinfo")?;
+            let freq_file =
+                File::open("/proc/cpuinfo").block_error("cpu", "failed to read /proc/cpuinfo")?;
             let freq_file_content = BufReader::new(freq_file);
             let mut cores = 0;
             // read frequency of each cpu and calculate the average which we will display
@@ -106,8 +112,11 @@ impl Block for Cpu {
                 if line.starts_with("cpu MHz") {
                     cores += 1;
                     let words = line.split(' ');
-                    let last = words.last().expect("failed to get last word of line while getting cpu frequency");
-                    let numb = last.parse::<f32>().expect("failed to parse String to f32 while getting cpu frequency");
+                    let last = words
+                        .last()
+                        .expect("failed to get last word of line while getting cpu frequency");
+                    let numb = last.parse::<f32>()
+                        .expect("failed to parse String to f32 while getting cpu frequency");
                     freq += numb;
                 }
             }
@@ -118,7 +127,13 @@ impl Block for Cpu {
 
         for line in f.lines().scan((), |_, x| x.ok()) {
             if line.starts_with("cpu ") {
-                let data: Vec<u64> = (&line).split(' ').collect::<Vec<&str>>().iter().skip(2).filter_map(|x| x.parse::<u64>().ok()).collect::<Vec<_>>();
+                let data: Vec<u64> = (&line)
+                    .split(' ')
+                    .collect::<Vec<&str>>()
+                    .iter()
+                    .skip(2)
+                    .filter_map(|x| x.parse::<u64>().ok())
+                    .collect::<Vec<_>>();
 
                 // idle = idle + iowait
                 let idle = data[3] + data[4];
@@ -141,7 +156,8 @@ impl Block for Cpu {
                     (1, 1)
                 };
 
-                utilization = (((total_delta - idle_delta) as f64 / total_delta as f64) * 100.) as u64;
+                utilization =
+                    (((total_delta - idle_delta) as f64 / total_delta as f64) * 100.) as u64;
 
                 self.prev_idle = idle;
                 self.prev_non_idle = non_idle;
@@ -156,7 +172,8 @@ impl Block for Cpu {
         });
         if self.frequency {
             let frequency = format!("{:.*}", 1, freq);
-            self.utilization.set_text(format!("{:02}% {}GHz", utilization, frequency));
+            self.utilization
+                .set_text(format!("{:02}% {}GHz", utilization, frequency));
         } else {
             self.utilization.set_text(format!("{:02}%", utilization));
         }

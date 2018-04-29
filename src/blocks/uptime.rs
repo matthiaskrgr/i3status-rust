@@ -39,7 +39,11 @@ impl UptimeConfig {
 impl ConfigBlock for Uptime {
     type Config = UptimeConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         Ok(Uptime {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
@@ -55,20 +59,29 @@ impl Block for Uptime {
         let uptime_raw = match read_file("uptime", "/proc/uptime") {
             Ok(file) => file,
             Err(e) => {
-                return Err(BlockError("Uptime".to_owned(), format!("Uptime failed to read /proc/uptime: '{}'", e)));
+                return Err(BlockError(
+                    "Uptime".to_owned(),
+                    format!("Uptime failed to read /proc/uptime: '{}'", e),
+                ));
             }
         };
         let uptime = match uptime_raw.split_whitespace().nth(0) {
             Some(uptime) => uptime,
             None => {
-                return Err(BlockError("Uptime".to_owned(), "Uptime failed to read uptime string.".to_owned()));
+                return Err(BlockError(
+                    "Uptime".to_owned(),
+                    "Uptime failed to read uptime string.".to_owned(),
+                ));
             }
         };
 
         let total_seconds = match uptime.parse::<f64>() {
             Ok(uptime) => uptime as u32,
             Err(e) => {
-                return Err(BlockError("Uptime".to_owned(), format!("Uptime failed to convert uptime float to integer: '{}')", e)));
+                return Err(BlockError(
+                    "Uptime".to_owned(),
+                    format!("Uptime failed to convert uptime float to integer: '{}')", e),
+                ));
             }
         };
 

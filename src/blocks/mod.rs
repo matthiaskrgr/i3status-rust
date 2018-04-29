@@ -56,7 +56,9 @@ use toml::value::Value;
 
 macro_rules! block {
     ($block_type:ident, $block_config:expr, $config:expr, $tx_update_request:expr) => {{
-        let block_config: <$block_type as ConfigBlock>::Config = <$block_type as ConfigBlock>::Config::deserialize($block_config).configuration_error("failed to deserialize block config")?;
+        let block_config: <$block_type as ConfigBlock>::Config =
+            <$block_type as ConfigBlock>::Config::deserialize($block_config)
+                .configuration_error("failed to deserialize block config")?;
         Ok(Box::new($block_type::new(block_config, $config, $tx_update_request)?) as Box<Block>)
     }};
 }
@@ -72,7 +74,12 @@ macro_rules! blocks {
     }
 }
 
-pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_request: Sender<Task>) -> Result<Box<Block>> {
+pub fn create_block(
+    name: &str,
+    block_config: Value,
+    config: Config,
+    tx_update_request: Sender<Task>,
+) -> Result<Box<Block>> {
     blocks!(name, block_config, config, tx_update_request;
             "time" => Time,
             "template" => Template,

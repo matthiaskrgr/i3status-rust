@@ -39,7 +39,9 @@ pub struct NvidiaGpu {
 #[serde(deny_unknown_fields)]
 pub struct NvidiaGpuConfig {
     /// Update interval in seconds
-    #[serde(default = "NvidiaGpuConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "NvidiaGpuConfig::default_interval", deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// Label
@@ -108,12 +110,21 @@ impl NvidiaGpuConfig {
 impl ConfigBlock for NvidiaGpu {
     type Config = NvidiaGpuConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
         let id_memory = Uuid::new_v4().simple().to_string();
         let id_fans = Uuid::new_v4().simple().to_string();
         let mut output = Command::new("nvidia-smi")
-            .args(&["-i", &block_config.gpu_id.to_string(), "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"])
+            .args(&[
+                "-i",
+                &block_config.gpu_id.to_string(),
+                "--query-gpu=name,memory.total",
+                "--format=csv,noheader,nounits",
+            ])
             .output()
             .block_error("gpu", "Failed to execute nvidia-smi.")?
             .stdout;
@@ -180,7 +191,12 @@ impl Block for NvidiaGpu {
         }
 
         let mut output = Command::new("nvidia-smi")
-            .args(&["-i", &self.gpu_id.to_string(), &format!("--query-gpu={}", params), "--format=csv,noheader,nounits"])
+            .args(&[
+                "-i",
+                &self.gpu_id.to_string(),
+                &format!("--query-gpu={}", params),
+                "--format=csv,noheader,nounits",
+            ])
             .output()
             .block_error("gpu", "Failed to execute nvidia-smi.")?
             .stdout;
@@ -282,7 +298,12 @@ impl Block for NvidiaGpu {
                         memory_widget.set_text(format!("{}MB", self.memory_total));
                     } else {
                         let mut output = Command::new("nvidia-smi")
-                            .args(&["-i", &self.gpu_id.to_string(), "--query-gpu=memory.used", "--format=csv,noheader,nounits"])
+                            .args(&[
+                                "-i",
+                                &self.gpu_id.to_string(),
+                                "--query-gpu=memory.used",
+                                "--format=csv,noheader,nounits",
+                            ])
                             .output()
                             .block_error("gpu", "Failed to execute nvidia-smi.")?
                             .stdout;
@@ -322,7 +343,10 @@ impl Block for NvidiaGpu {
                                     "-a",
                                     &format!("[gpu:{}]/GPUFanControlState=1", self.gpu_id),
                                     "-a",
-                                    &format!("[fan:{}]/GPUTargetFanSpeed={}", self.gpu_id, self.fan_speed),
+                                    &format!(
+                                        "[fan:{}]/GPUTargetFanSpeed={}",
+                                        self.gpu_id, self.fan_speed
+                                    ),
                                 ])
                                 .output()
                                 .block_error("gpu", "Failed to execute nvidia-settings.")?;
@@ -330,14 +354,23 @@ impl Block for NvidiaGpu {
                             fan_widget.set_state(State::Warning);
                         } else {
                             Command::new("nvidia-settings")
-                                .args(&["-a", &format!("[gpu:{}]/GPUFanControlState=0", self.gpu_id)])
+                                .args(&[
+                                    "-a",
+                                    &format!("[gpu:{}]/GPUFanControlState=0", self.gpu_id),
+                                ])
                                 .output()
                                 .block_error("gpu", "Failed to execute nvidia-settings.")?;
                             fan_widget.set_state(State::Idle);
                         }
                     } else if self.fan_speed_controlled {
                         Command::new("nvidia-settings")
-                            .args(&["-a", &format!("[fan:{}]/GPUTargetFanSpeed={}", self.gpu_id, new_fan_speed)])
+                            .args(&[
+                                "-a",
+                                &format!(
+                                    "[fan:{}]/GPUTargetFanSpeed={}",
+                                    self.gpu_id, new_fan_speed
+                                ),
+                            ])
                             .output()
                             .block_error("gpu", "Failed to execute nvidia-settings.")?;
                         self.fan_speed = new_fan_speed;

@@ -28,7 +28,11 @@ pub trait Block {
 pub trait ConfigBlock: Block {
     type Config;
 
-    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Result<Self>
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        tx_update_request: Sender<Task>,
+    ) -> Result<Self>
     where
         Self: Sized;
 }

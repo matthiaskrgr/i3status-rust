@@ -77,7 +77,9 @@ pub struct DiskSpaceConfig {
     pub unit: Unit,
 
     /// Update interval in seconds
-    #[serde(default = "DiskSpaceConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "DiskSpaceConfig::default_interval", deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// Diskspace warning in GiB (yellow)
@@ -138,7 +140,11 @@ impl DiskSpace {
 impl ConfigBlock for DiskSpace {
     type Config = DiskSpaceConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         Ok(DiskSpace {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
@@ -155,7 +161,8 @@ impl ConfigBlock for DiskSpace {
 
 impl Block for DiskSpace {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let statvfs = Statvfs::for_path(Path::new(self.path.as_str())).block_error("disk_space", "failed to retrieve statvfs")?;
+        let statvfs = Statvfs::for_path(Path::new(self.path.as_str()))
+            .block_error("disk_space", "failed to retrieve statvfs")?;
         let result;
         let converted;
 
@@ -171,7 +178,10 @@ impl Block for DiskSpace {
             //InfoType::Total | InfoType::Used => unimplemented!(),
         }
 
-        self.disk_space.set_text(format!("{0} {1:.2} {2:?}", self.alias, converted, self.unit));
+        self.disk_space.set_text(format!(
+            "{0} {1:.2} {2:?}",
+            self.alias, converted, self.unit
+        ));
 
         let state = self.compute_state(result, self.warning, self.alert);
         self.disk_space.set_state(state);

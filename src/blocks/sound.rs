@@ -42,7 +42,11 @@ impl SoundDevice {
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .block_error("sound", "could not run amixer to get sound info")?;
 
-        let last_line = &output.lines().into_iter().last().block_error("sound", "could not get sound info")?;
+        let last_line = &output
+            .lines()
+            .into_iter()
+            .last()
+            .block_error("sound", "could not get sound info")?;
 
         let last = last_line
             .split_whitespace()
@@ -63,7 +67,14 @@ impl SoundDevice {
 
     fn set_volume(&mut self, step: i32) -> Result<()> {
         Command::new("sh")
-            .args(&["-c", format!("amixer set {} {}%", self.name, (self.volume as i32 + step) as u32).as_str()])
+            .args(&[
+                "-c",
+                format!(
+                    "amixer set {} {}%",
+                    self.name,
+                    (self.volume as i32 + step) as u32
+                ).as_str(),
+            ])
             .output()
             .block_error("sound", "failed to set volume")?;
 
@@ -127,12 +138,20 @@ impl SoundConfig {
 
 impl Sound {
     fn display(&mut self) -> Result<()> {
-        let device = self.devices.get_mut(self.current_idx).block_error("sound", "failed to get device")?;
+        let device = self.devices
+            .get_mut(self.current_idx)
+            .block_error("sound", "failed to get device")?;
         device.get_info()?;
 
         if device.muted {
             self.text.set_icon("volume_empty");
-            self.text.set_text(self.config.icons.get("volume_muted").block_error("sound", "cannot find icon")?.to_owned());
+            self.text.set_text(
+                self.config
+                    .icons
+                    .get("volume_muted")
+                    .block_error("sound", "cannot find icon")?
+                    .to_owned(),
+            );
             self.text.set_state(State::Warning);
         } else {
             self.text.set_icon(match device.volume {
@@ -151,7 +170,11 @@ impl Sound {
 impl ConfigBlock for Sound {
     type Config = SoundConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
         let mut step_width = block_config.step_width;
         if step_width > 50 {
@@ -221,7 +244,9 @@ impl Block for Sound {
             if name.as_str() == self.id {
                 {
                     // Additional scope to not keep mutably borrowed device for too long
-                    let device = self.devices.get_mut(self.current_idx).block_error("sound", "failed to get device")?;
+                    let device = self.devices
+                        .get_mut(self.current_idx)
+                        .block_error("sound", "failed to get device")?;
                     let volume = device.volume;
 
                     match e.button {
@@ -232,9 +257,12 @@ impl Block for Sound {
                                 command = self.on_click.clone().unwrap();
                             }
                             if self.on_click.is_some() {
-                                let command_broken: Vec<&str> = command.split_whitespace().collect();
+                                let command_broken: Vec<&str> =
+                                    command.split_whitespace().collect();
                                 let mut itr = command_broken.iter();
-                                let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap())).args(itr).spawn();
+                                let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
+                                    .args(itr)
+                                    .spawn();
                             }
                         }
                         MouseButton::WheelUp => {

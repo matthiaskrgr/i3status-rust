@@ -28,7 +28,13 @@ impl NetworkDevice {
     pub fn from_device(device: String) -> Result<Self> {
         let device_path = Path::new("/sys/class/net").join(device.clone());
         if !device_path.exists() {
-            return Err(BlockError("net".to_string(), format!("Network device '{}' does not exist", device_path.to_string_lossy())));
+            return Err(BlockError(
+                "net".to_string(),
+                format!(
+                    "Network device '{}' does not exist",
+                    device_path.to_string_lossy()
+                ),
+            ));
         }
 
         // I don't believe that this should ever change, so set it now:
@@ -57,12 +63,16 @@ impl NetworkDevice {
 
     /// Query the device for the current `tx_bytes` statistic.
     pub fn tx_bytes(&self) -> Result<u64> {
-        read_file(&self.device_path.join("statistics/tx_bytes"))?.parse::<u64>().block_error("net", "Failed to parse tx_bytes")
+        read_file(&self.device_path.join("statistics/tx_bytes"))?
+            .parse::<u64>()
+            .block_error("net", "Failed to parse tx_bytes")
     }
 
     /// Query the device for the current `rx_bytes` statistic.
     pub fn rx_bytes(&self) -> Result<u64> {
-        read_file(&self.device_path.join("statistics/rx_bytes"))?.parse::<u64>().block_error("net", "Failed to parse rx_bytes")
+        read_file(&self.device_path.join("statistics/rx_bytes"))?
+            .parse::<u64>()
+            .block_error("net", "Failed to parse rx_bytes")
     }
 
     /// Checks whether this device is wireless.
@@ -75,10 +85,19 @@ impl NetworkDevice {
     pub fn ssid(&self) -> Result<Option<String>> {
         let up = self.is_up()?;
         if !self.wireless || !up {
-            return Err(BlockError("net".to_string(), "SSIDs are only available for connected wireless devices.".to_string()));
+            return Err(BlockError(
+                "net".to_string(),
+                "SSIDs are only available for connected wireless devices.".to_string(),
+            ));
         }
         let mut iw_output = Command::new("sh")
-            .args(&["-c", &format!("iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\"", self.device)])
+            .args(&[
+                "-c",
+                &format!(
+                    "iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\"",
+                    self.device
+                ),
+            ])
             .output()
             .block_error("net", "Failed to execute SSID query.")?
             .stdout;
@@ -87,7 +106,9 @@ impl NetworkDevice {
             Ok(None)
         } else {
             iw_output.pop(); // Remove trailing newline.
-            String::from_utf8(iw_output).block_error("net", "Non-UTF8 SSID.").map(|s| Some(s))
+            String::from_utf8(iw_output)
+                .block_error("net", "Non-UTF8 SSID.")
+                .map(|s| Some(s))
         }
     }
 
@@ -106,7 +127,9 @@ impl NetworkDevice {
             Ok(None)
         } else {
             ip_output.pop(); // Remove trailing newline.
-            String::from_utf8(ip_output).block_error("net", "Non-UTF8 IP address.").map(|s| Some(s))
+            String::from_utf8(ip_output)
+                .block_error("net", "Non-UTF8 IP address.")
+                .map(|s| Some(s))
         }
     }
 
@@ -114,10 +137,19 @@ impl NetworkDevice {
     pub fn bitrate(&self) -> Result<Option<String>> {
         let up = self.is_up()?;
         if !self.wireless || !up {
-            return Err(BlockError("net".to_string(), "Bitrate is only available for connected wireless devices.".to_string()));
+            return Err(BlockError(
+                "net".to_string(),
+                "Bitrate is only available for connected wireless devices.".to_string(),
+            ));
         }
         let mut bitrate_output = Command::new("sh")
-            .args(&["-c", &format!("iw dev {} link | grep \"tx bitrate\" | awk '{{print $3\" \"$4}}'", self.device)])
+            .args(&[
+                "-c",
+                &format!(
+                    "iw dev {} link | grep \"tx bitrate\" | awk '{{print $3\" \"$4}}'",
+                    self.device
+                ),
+            ])
             .output()
             .block_error("net", "Failed to execute bitrate query.")?
             .stdout;
@@ -126,7 +158,9 @@ impl NetworkDevice {
             Ok(None)
         } else {
             bitrate_output.pop(); // Remove trailing newline.
-            String::from_utf8(bitrate_output).block_error("net", "Non-UTF8 bitrate.").map(|s| Some(s))
+            String::from_utf8(bitrate_output)
+                .block_error("net", "Non-UTF8 bitrate.")
+                .map(|s| Some(s))
         }
     }
 }
@@ -250,7 +284,11 @@ impl NetConfig {
 impl ConfigBlock for Net {
     type Config = NetConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let device = NetworkDevice::from_device(block_config.device)?;
         let init_rx_bytes = device.rx_bytes()?;
         let init_tx_bytes = device.tx_bytes()?;
@@ -306,9 +344,13 @@ impl ConfigBlock for Net {
 }
 
 fn read_file(path: &Path) -> Result<String> {
-    let mut f = OpenOptions::new().read(true).open(path).block_error("net", &format!("failed to open file {}", path.to_string_lossy()))?;
+    let mut f = OpenOptions::new().read(true).open(path).block_error(
+        "net",
+        &format!("failed to open file {}", path.to_string_lossy()),
+    )?;
     let mut content = String::new();
-    f.read_to_string(&mut content).block_error("net", &format!("failed to read {}", path.to_string_lossy()))?;
+    f.read_to_string(&mut content)
+        .block_error("net", &format!("failed to read {}", path.to_string_lossy()))?;
     // Removes trailing newline
     content.pop();
     Ok(content)
@@ -374,7 +416,8 @@ impl Block for Net {
         }
 
         // Update the throughout/graph widgets if they are enabled
-        let update_interval = (self.update_interval.as_secs() as f64) + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
+        let update_interval = (self.update_interval.as_secs() as f64)
+            + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
         if self.output_tx.is_some() || self.graph_tx.is_some() {
             let current_tx = self.device.tx_bytes()?;
             let tx_bytes = ((current_tx - self.tx_bytes) as f64 / update_interval) as u64;

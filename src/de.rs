@@ -86,7 +86,11 @@ macro_rules! map_type {
 
 impl<'de, T, V> DeserializeSeed<'de> for MapType<T, V>
 where
-    T: Deserialize<'de> + Default + FromStr<Err = String> + From<Map<String, V>> + Deref<Target = Map<String, V>>,
+    T: Deserialize<'de>
+        + Default
+        + FromStr<Err = String>
+        + From<Map<String, V>>
+        + Deref<Target = Map<String, V>>,
     V: Deserialize<'de> + Clone,
 {
     type Value = Map<String, V>;
@@ -101,7 +105,11 @@ where
 
 impl<'de, T, V> de::Visitor<'de> for MapType<T, V>
 where
-    T: Deserialize<'de> + Default + FromStr<Err = String> + From<Map<String, V>> + Deref<Target = Map<String, V>>,
+    T: Deserialize<'de>
+        + Default
+        + FromStr<Err = String>
+        + From<Map<String, V>>
+        + Deref<Target = Map<String, V>>,
     V: Deserialize<'de> + Clone,
 {
     type Value = Map<String, V>;
@@ -123,7 +131,9 @@ where
         A: de::SeqAccess<'de>,
     {
         let mut vec: Vec<Self::Value> = Vec::new();
-        while let Some(element) = visitor.next_element_seed(MapType::<T, V>(PhantomData, PhantomData))? {
+        while let Some(element) =
+            visitor.next_element_seed(MapType::<T, V>(PhantomData, PhantomData))?
+        {
             vec.push(element);
         }
 
@@ -155,7 +165,8 @@ where
     where
         A: de::MapAccess<'de>,
     {
-        let mut map: BTreeMap<String, value::Value> = Deserialize::deserialize(de::value::MapAccessDeserializer::new(visitor))?;
+        let mut map: BTreeMap<String, value::Value> =
+            Deserialize::deserialize(de::value::MapAccessDeserializer::new(visitor))?;
         let mut combined: Map<String, V> = Map::new();
 
         if let Some(raw_names) = map.remove("name") {
@@ -164,12 +175,15 @@ where
                 .map_err(|e: toml::de::Error| de::Error::custom(e.description()))?);
         }
         if let Some(raw_overrides) = map.remove("overrides") {
-            let overrides: Map<String, V> = Map::<String, V>::deserialize(raw_overrides).map_err(|e: toml::de::Error| de::Error::custom(e.description()))?;
+            let overrides: Map<String, V> = Map::<String, V>::deserialize(raw_overrides)
+                .map_err(|e: toml::de::Error| de::Error::custom(e.description()))?;
             combined.extend(overrides);
         }
 
         if combined.is_empty() {
-            Err(de::Error::custom("missing all fields (`name`, `overrides`)"))
+            Err(de::Error::custom(
+                "missing all fields (`name`, `overrides`)",
+            ))
         } else {
             Ok(combined)
         }

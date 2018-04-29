@@ -27,7 +27,9 @@ pub struct Temperature {
 #[serde(deny_unknown_fields)]
 pub struct TemperatureConfig {
     /// Update interval in seconds
-    #[serde(default = "TemperatureConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "TemperatureConfig::default_interval", deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// Collapsed by default?
@@ -56,7 +58,11 @@ impl TemperatureConfig {
 impl ConfigBlock for Temperature {
     type Config = TemperatureConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
         Ok(Temperature {
             update_interval: block_config.interval,
@@ -64,7 +70,8 @@ impl ConfigBlock for Temperature {
             output: String::new(),
             collapsed: block_config.collapsed,
             id,
-            format: FormatTemplate::from_string(block_config.format).block_error("temperature", "Invalid format specified for temperature")?,
+            format: FormatTemplate::from_string(block_config.format)
+                .block_error("temperature", "Invalid format specified for temperature")?,
         })
     }
 }
@@ -81,7 +88,11 @@ impl Block for Temperature {
 
         for line in output.lines() {
             if line.starts_with("  temp") {
-                let rest = &line[6..].split('_').flat_map(|x| x.split(' ')).flat_map(|x| x.split('.')).collect::<Vec<_>>();
+                let rest = &line[6..]
+                    .split('_')
+                    .flat_map(|x| x.split(' '))
+                    .flat_map(|x| x.split('.'))
+                    .collect::<Vec<_>>();
 
                 if rest[1].starts_with("input") {
                     match rest[2].parse::<i64>() {
@@ -94,16 +105,26 @@ impl Block for Temperature {
                             eprintln!("Temperature ({}) outside of range ([-100, 150])", t);
                             Ok(())
                         }
-                        Err(_) => Err(BlockError("temperature".to_owned(), "failed to parse temperature as an integer".to_owned())),
+                        Err(_) => Err(BlockError(
+                            "temperature".to_owned(),
+                            "failed to parse temperature as an integer".to_owned(),
+                        )),
                     }?
                 }
             }
         }
 
         if !temperatures.is_empty() {
-            let max: i64 = *temperatures.iter().max().block_error("temperature", "failed to get max temperature")?;
-            let min: i64 = *temperatures.iter().min().block_error("temperature", "failed to get min temperature")?;
-            let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64).round() as i64;
+            let max: i64 = *temperatures
+                .iter()
+                .max()
+                .block_error("temperature", "failed to get max temperature")?;
+            let min: i64 = *temperatures
+                .iter()
+                .min()
+                .block_error("temperature", "failed to get min temperature")?;
+            let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64)
+                .round() as i64;
 
             let values = map!("{average}" => avg,
                               "{min}" => min,

@@ -28,7 +28,9 @@ pub struct Template {
 #[serde(deny_unknown_fields)]
 pub struct TemplateConfig {
     /// Update interval in seconds
-    #[serde(default = "TemplateConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "TemplateConfig::default_interval", deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 }
 
@@ -41,7 +43,11 @@ impl TemplateConfig {
 impl ConfigBlock for Template {
     type Config = TemplateConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         Ok(Template {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,

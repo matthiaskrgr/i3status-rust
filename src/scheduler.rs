@@ -76,12 +76,25 @@ impl UpdateScheduler {
         }
     }
 
-    pub fn do_scheduled_updates(&mut self, block_map: &mut HashMap<String, &mut Block>) -> Result<()> {
-        let t = self.schedule.pop().internal_error("scheduler", "schedule is empty")?;
+    pub fn do_scheduled_updates(
+        &mut self,
+        block_map: &mut HashMap<String, &mut Block>,
+    ) -> Result<()> {
+        let t = self.schedule
+            .pop()
+            .internal_error("scheduler", "schedule is empty")?;
         let mut tasks_next = vec![t.clone()];
 
-        while !self.schedule.is_empty() && t.update_time == self.schedule.peek().internal_error("scheduler", "schedule is empty")?.update_time {
-            tasks_next.push(self.schedule.pop().internal_error("scheduler", "schedule is empty")?)
+        while !self.schedule.is_empty()
+            && t.update_time
+                == self.schedule
+                    .peek()
+                    .internal_error("scheduler", "schedule is empty")?
+                    .update_time
+        {
+            tasks_next.push(self.schedule
+                .pop()
+                .internal_error("scheduler", "schedule is empty")?)
         }
 
         let now = Instant::now();
@@ -92,8 +105,15 @@ impl UpdateScheduler {
         let now = Instant::now();
 
         for task in tasks_next {
-            if let Some(dur) = block_map.get_mut(&task.id).internal_error("scheduler", "could not get required block")?.update()? {
-                self.schedule.push(Task { id: task.id, update_time: now + dur })
+            if let Some(dur) = block_map
+                .get_mut(&task.id)
+                .internal_error("scheduler", "could not get required block")?
+                .update()?
+            {
+                self.schedule.push(Task {
+                    id: task.id,
+                    update_time: now + dur,
+                })
             }
         }
 

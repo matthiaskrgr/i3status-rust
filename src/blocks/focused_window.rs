@@ -122,7 +122,10 @@ impl ConfigBlock for FocusedWindow {
 
 impl Block for FocusedWindow {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let mut string = (*self.title.lock().block_error("focused_window", "failed to acquire lock")?).clone();
+        let mut string = (*self.title
+            .lock()
+            .block_error("focused_window", "failed to acquire lock")?)
+            .clone();
         string = string.chars().take(self.max_width).collect();
         self.text.set_text(string);
         Ok(None)

@@ -27,7 +27,9 @@ pub struct SpeedTest {
 #[serde(deny_unknown_fields)]
 pub struct SpeedTestConfig {
     /// Update interval in seconds
-    #[serde(default = "SpeedTestConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "SpeedTestConfig::default_interval", deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// Mode of speed display, true => MB/s, false => Mb/s
@@ -51,7 +53,11 @@ fn get_values(bytes: bool) -> Result<String> {
     if bytes {
         cmd.arg("--bytes");
     }
-    String::from_utf8(cmd.output().block_error("speedtest", "could not get speedtest-cli output")?.stdout).block_error("speedtest", "could not parse speedtest-cli output")
+    String::from_utf8(
+        cmd.output()
+            .block_error("speedtest", "could not get speedtest-cli output")?
+            .stdout,
+    ).block_error("speedtest", "could not parse speedtest-cli output")
 }
 
 fn parse_values(output: String) -> Result<Vec<f32>> {
@@ -60,19 +66,30 @@ fn parse_values(output: String) -> Result<Vec<f32>> {
     for line in output.lines() {
         let mut word = line.split_whitespace();
         word.next();
-        vals.push(word.next().block_error("speedtest", "missing data")?.parse::<f32>().block_error("speedtest", "Unable to parse data")?);
+        vals.push(word.next()
+            .block_error("speedtest", "missing data")?
+            .parse::<f32>()
+            .block_error("speedtest", "Unable to parse data")?);
     }
 
     Ok(vals)
 }
 
-fn make_thread(recv: Receiver<()>, done: Sender<Task>, values: Arc<Mutex<(bool, Vec<f32>)>>, config: SpeedTestConfig, id: String) {
+fn make_thread(
+    recv: Receiver<()>,
+    done: Sender<Task>,
+    values: Arc<Mutex<(bool, Vec<f32>)>>,
+    config: SpeedTestConfig,
+    id: String,
+) {
     spawn(move || loop {
         if let Some(_) = recv.recv() {
             if let Ok(output) = get_values(config.bytes) {
                 if let Ok(vals) = parse_values(output) {
                     if vals.len() == 3 {
-                        let (ref mut update, ref mut values) = *values.lock().expect("main thread paniced while holding speedtest-values mutex");
+                        let (ref mut update, ref mut values) = *values
+                            .lock()
+                            .expect("main thread paniced while holding speedtest-values mutex");
                         *values = vals;
 
                         *update = true;
@@ -104,9 +121,15 @@ impl ConfigBlock for SpeedTest {
         Ok(SpeedTest {
             vals,
             text: vec![
-                ButtonWidget::new(config.clone(), &id).with_icon("ping").with_text("0ms"),
-                ButtonWidget::new(config.clone(), &id).with_icon("net_down").with_text(&format!("0{}", ty)),
-                ButtonWidget::new(config.clone(), &id).with_icon("net_up").with_text(&format!("0{}", ty)),
+                ButtonWidget::new(config.clone(), &id)
+                    .with_icon("ping")
+                    .with_text("0ms"),
+                ButtonWidget::new(config.clone(), &id)
+                    .with_icon("net_down")
+                    .with_text(&format!("0{}", ty)),
+                ButtonWidget::new(config.clone(), &id)
+                    .with_icon("net_up")
+                    .with_text(&format!("0{}", ty)),
             ],
             id,
             send,
@@ -117,7 +140,9 @@ impl ConfigBlock for SpeedTest {
 
 impl Block for SpeedTest {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let (ref mut updated, ref vals) = *self.vals.lock().block_error("speedtest", "mutext poisoned")?;
+        let (ref mut updated, ref vals) = *self.vals
+            .lock()
+            .block_error("speedtest", "mutext poisoned")?;
 
         if *updated {
             *updated = false;

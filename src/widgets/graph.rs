@@ -62,12 +62,17 @@ impl GraphWidget {
             let length = bars.len() as f64 - 1.0;
             let bar = content
                 .iter()
-                .map(|x| bars[((clamp(x.to_f64().unwrap(), min, max) - min) / extant * length) as usize])
+                .map(|x| {
+                    bars[((clamp(x.to_f64().unwrap(), min, max) - min) / extant * length) as usize]
+                })
                 .collect::<Vec<&'static str>>()
                 .concat();
             self.content = Some(bar);
         } else {
-            let bar = (0..content.len() - 1).map(|_| bars[0]).collect::<Vec<&'static str>>().concat();
+            let bar = (0..content.len() - 1)
+                .map(|_| bars[0])
+                .collect::<Vec<&'static str>>()
+                .concat();
             self.content = Some(bar);
         }
         self.update();
@@ -102,7 +107,9 @@ impl GraphWidget {
 
 impl I3BarWidget for GraphWidget {
     fn to_string(&self) -> String {
-        self.cached_output.clone().unwrap_or_else(|| self.rendered.to_string())
+        self.cached_output
+            .clone()
+            .unwrap_or_else(|| self.rendered.to_string())
     }
 
     fn get_rendered(&self) -> &Value {
