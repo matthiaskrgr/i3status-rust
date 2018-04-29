@@ -1,19 +1,19 @@
+use chan::Sender;
 use std::cmp::min;
+use std::ffi::OsStr;
 use std::io::Read;
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
-use std::ffi::OsStr;
-use chan::Sender;
 
-use scheduler::Task;
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::button::ButtonWidget;
-use widget::{I3BarWidget, State};
 use input::{I3BarEvent, MouseButton};
+use scheduler::Task;
+use widget::{I3BarWidget, State};
+use widgets::button::ButtonWidget;
 
 use uuid::Uuid;
 
@@ -42,11 +42,7 @@ impl SoundDevice {
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .block_error("sound", "could not run amixer to get sound info")?;
 
-        let last_line = &output
-            .lines()
-            .into_iter()
-            .last()
-            .block_error("sound", "could not get sound info")?;
+        let last_line = &output.lines().into_iter().last().block_error("sound", "could not get sound info")?;
 
         let last = last_line
             .split_whitespace()
@@ -67,14 +63,7 @@ impl SoundDevice {
 
     fn set_volume(&mut self, step: i32) -> Result<()> {
         Command::new("sh")
-            .args(&[
-                "-c",
-                format!(
-                    "amixer set {} {}%",
-                    self.name,
-                    (self.volume as i32 + step) as u32
-                ).as_str(),
-            ])
+            .args(&["-c", format!("amixer set {} {}%", self.name, (self.volume as i32 + step) as u32).as_str()])
             .output()
             .block_error("sound", "failed to set volume")?;
 
@@ -138,20 +127,12 @@ impl SoundConfig {
 
 impl Sound {
     fn display(&mut self) -> Result<()> {
-        let device = self.devices
-            .get_mut(self.current_idx)
-            .block_error("sound", "failed to get device")?;
+        let device = self.devices.get_mut(self.current_idx).block_error("sound", "failed to get device")?;
         device.get_info()?;
 
         if device.muted {
             self.text.set_icon("volume_empty");
-            self.text.set_text(
-                self.config
-                    .icons
-                    .get("volume_muted")
-                    .block_error("sound", "cannot find icon")?
-                    .to_owned(),
-            );
+            self.text.set_text(self.config.icons.get("volume_muted").block_error("sound", "cannot find icon")?.to_owned());
             self.text.set_state(State::Warning);
         } else {
             self.text.set_icon(match device.volume {
@@ -190,13 +171,11 @@ impl ConfigBlock for Sound {
         // Monitor volume changes in a separate thread.
         thread::spawn(move || {
             let mut monitor = Command::new("sh")
-                .args(
-                    &[
-                        "-c",
-                        // Line-buffer to reduce noise.
-                        "stdbuf -oL alsactl monitor",
-                    ],
-                )
+                .args(&[
+                    "-c",
+                    // Line-buffer to reduce noise.
+                    "stdbuf -oL alsactl monitor",
+                ])
                 .stdout(Stdio::piped())
                 .spawn()
                 .expect("Failed to start alsactl monitor")
@@ -238,16 +217,11 @@ impl Block for Sound {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-
-
         if let Some(ref name) = e.name {
-
             if name.as_str() == self.id {
                 {
                     // Additional scope to not keep mutably borrowed device for too long
-                    let device = self.devices
-                        .get_mut(self.current_idx)
-                        .block_error("sound", "failed to get device")?;
+                    let device = self.devices.get_mut(self.current_idx).block_error("sound", "failed to get device")?;
                     let volume = device.volume;
 
                     match e.button {
@@ -260,16 +234,12 @@ impl Block for Sound {
                             if self.on_click.is_some() {
                                 let command_broken: Vec<&str> = command.split_whitespace().collect();
                                 let mut itr = command_broken.iter();
-                                let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
-                                    .args(itr)
-                                    .spawn();
+                                let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap())).args(itr).spawn();
                             }
                         }
                         MouseButton::WheelUp => {
                             if volume < 100 {
-                                device.set_volume(
-                                    min(self.step_width, 100 - volume) as i32,
-                                )?;
+                                device.set_volume(min(self.step_width, 100 - volume) as i32)?;
                             }
                         }
                         MouseButton::WheelDown => {

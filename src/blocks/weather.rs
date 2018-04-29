@@ -1,8 +1,8 @@
+use chan::Sender;
+use serde_json;
 use std::collections::HashMap;
 use std::process::Command;
 use std::time::Duration;
-use chan::Sender;
-use serde_json;
 use uuid::Uuid;
 
 use block::{Block, ConfigBlock};
@@ -12,8 +12,8 @@ use errors::*;
 use input::{I3BarEvent, MouseButton};
 use scheduler::Task;
 use util::FormatTemplate;
-use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
+use widgets::button::ButtonWidget;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "name", rename_all = "lowercase")]
@@ -25,11 +25,7 @@ pub enum WeatherService {
     //     longitude: f64,
     //     units: Option<InputUnit>
     // },
-    OpenWeatherMap {
-        api_key: String,
-        city_id: String,
-        units: OpenWeatherMapUnits,
-    },
+    OpenWeatherMap { api_key: String, city_id: String, units: OpenWeatherMapUnits },
 }
 
 #[derive(Copy, Clone, Debug, Deserialize)]
@@ -51,31 +47,23 @@ pub struct Weather {
 impl Weather {
     fn update_weather(&mut self) -> Result<()> {
         match self.service {
-            WeatherService::OpenWeatherMap {
-                ref api_key,
-                ref city_id,
-                ref units,
-            } => {
+            WeatherService::OpenWeatherMap { ref api_key, ref city_id, ref units } => {
                 let output = Command::new("sh")
-                    .args(
-                        &[
-                            "-c",
-                            &format!(
-                                "curl -m 3 \"http://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={api_key}&units={units}\" 2> /dev/null",
-                                city_id = city_id,
-                                api_key = api_key,
-                                units = match *units {
-                                    OpenWeatherMapUnits::Metric => "metric",
-                                    OpenWeatherMapUnits::Imperial => "imperial",
-                                },
-                            ),
-                        ],
-                    )
+                    .args(&[
+                        "-c",
+                        &format!(
+                            "curl -m 3 \"http://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={api_key}&units={units}\" 2> /dev/null",
+                            city_id = city_id,
+                            api_key = api_key,
+                            units = match *units {
+                                OpenWeatherMapUnits::Metric => "metric",
+                                OpenWeatherMapUnits::Imperial => "imperial",
+                            },
+                        ),
+                    ])
                     .output()
                     .block_error("weather", "Failed to exectute curl.")
-                    .and_then(|raw_output| {
-                        String::from_utf8(raw_output.stdout).block_error("weather", "Non-UTF8 SSID.")
-                    })?;
+                    .and_then(|raw_output| String::from_utf8(raw_output.stdout).block_error("weather", "Non-UTF8 SSID."))?;
 
                 // Don't error out on empty responses e.g. for when not
                 // connected to the internet.
@@ -85,56 +73,34 @@ impl Weather {
                     return Ok(());
                 }
 
-                let json: serde_json::value::Value = serde_json::from_str(&output).block_error(
-                    "weather",
-                    "Failed to parse JSON response.",
-                )?;
+                let json: serde_json::value::Value = serde_json::from_str(&output).block_error("weather", "Failed to parse JSON response.")?;
 
                 // Try to convert an API error into a block error.
                 if let Some(val) = json.get("message") {
-                    return Err(BlockError(
-                        "weather".to_string(),
-                        format!("API Error: {}", val.as_str().unwrap()),
-                    ));
+                    return Err(BlockError("weather".to_string(), format!("API Error: {}", val.as_str().unwrap())));
                 };
-                let raw_weather = match json.pointer("/weather/0/main")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string()) {
+                let raw_weather = match json.pointer("/weather/0/main").and_then(|v| v.as_str()).map(|s| s.to_string()) {
                     Some(v) => v,
                     None => {
-                        return Err(BlockError(
-                            "weather".to_string(),
-                            "Malformed JSON.".to_string(),
-                        ));
+                        return Err(BlockError("weather".to_string(), "Malformed JSON.".to_string()));
                     }
                 };
                 let raw_temp = match json.pointer("/main/temp").and_then(|v| v.as_f64()) {
                     Some(v) => v,
                     None => {
-                        return Err(BlockError(
-                            "weather".to_string(),
-                            "Malformed JSON.".to_string(),
-                        ));
+                        return Err(BlockError("weather".to_string(), "Malformed JSON.".to_string()));
                     }
                 };
                 let raw_wind = match json.pointer("/wind/speed").and_then(|v| v.as_f64()) {
                     Some(v) => v,
                     None => {
-                        return Err(BlockError(
-                            "weather".to_string(),
-                            "Malformed JSON.".to_string(),
-                        ));
+                        return Err(BlockError("weather".to_string(), "Malformed JSON.".to_string()));
                     }
                 };
-                let raw_location = match json.pointer("/name").and_then(|v| v.as_str()).map(|s| {
-                    s.to_string()
-                }) {
+                let raw_location = match json.pointer("/name").and_then(|v| v.as_str()).map(|s| s.to_string()) {
                     Some(v) => v,
                     None => {
-                        return Err(BlockError(
-                            "weather".to_string(),
-                            "Malformed JSON.".to_string(),
-                        ));
+                        return Err(BlockError("weather".to_string(), "Malformed JSON.".to_string()));
                     }
                 };
 
@@ -147,8 +113,7 @@ impl Weather {
                     _ => "weather_default",
                 });
 
-                self.weather_keys =
-                    map_to_owned!("{weather}" => raw_weather,
+                self.weather_keys = map_to_owned!("{weather}" => raw_weather,
                                   "{temp}" => format!("{:.0}", raw_temp),
                                   "{wind}" => format!("{:.1}", raw_wind),
                                   "{location}" => raw_location);

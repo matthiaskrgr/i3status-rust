@@ -1,22 +1,22 @@
-use std::time::{Duration, Instant};
 use chan::Sender;
-use std::thread;
 use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::{Duration, Instant};
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use errors::*;
-use widgets::text::TextWidget;
-use widget::I3BarWidget;
 use scheduler::Task;
+use widget::I3BarWidget;
+use widgets::text::TextWidget;
 
 use uuid::Uuid;
 
 extern crate i3ipc;
+use self::i3ipc::event::inner::{WindowChange, WorkspaceChange};
+use self::i3ipc::event::Event;
 use self::i3ipc::I3EventListener;
 use self::i3ipc::Subscription;
-use self::i3ipc::event::Event;
-use self::i3ipc::event::inner::{WindowChange, WorkspaceChange};
 
 pub struct FocusedWindow {
     text: TextWidget,
@@ -120,13 +120,9 @@ impl ConfigBlock for FocusedWindow {
     }
 }
 
-
 impl Block for FocusedWindow {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let mut string = (*self.title
-            .lock()
-            .block_error("focused_window", "failed to acquire lock")?)
-            .clone();
+        let mut string = (*self.title.lock().block_error("focused_window", "failed to acquire lock")?).clone();
         string = string.chars().take(self.max_width).collect();
         self.text.set_text(string);
         Ok(None)

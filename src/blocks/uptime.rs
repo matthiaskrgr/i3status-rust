@@ -1,14 +1,14 @@
-use std::time::Duration;
-use chan::Sender;
 use block::{Block, ConfigBlock};
+use blocks::lib::*;
+use chan::Sender;
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::text::TextWidget;
-use widget::I3BarWidget;
 use scheduler::Task;
+use std::time::Duration;
 use uuid::Uuid;
-use blocks::lib::*;
+use widget::I3BarWidget;
+use widgets::text::TextWidget;
 
 pub struct Uptime {
     text: TextWidget,
@@ -16,8 +16,10 @@ pub struct Uptime {
     update_interval: Duration,
 
     //useful, but optional
-    #[allow(dead_code)] config: Config,
-    #[allow(dead_code)] tx_update_request: Sender<Task>,
+    #[allow(dead_code)]
+    config: Config,
+    #[allow(dead_code)]
+    tx_update_request: Sender<Task>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -53,29 +55,20 @@ impl Block for Uptime {
         let uptime_raw = match read_file("uptime", "/proc/uptime") {
             Ok(file) => file,
             Err(e) => {
-                return Err(BlockError(
-                    "Uptime".to_owned(),
-                    format!("Uptime failed to read /proc/uptime: '{}'", e),
-                ));
+                return Err(BlockError("Uptime".to_owned(), format!("Uptime failed to read /proc/uptime: '{}'", e)));
             }
         };
         let uptime = match uptime_raw.split_whitespace().nth(0) {
             Some(uptime) => uptime,
             None => {
-                return Err(BlockError(
-                    "Uptime".to_owned(),
-                    "Uptime failed to read uptime string.".to_owned(),
-                ));
+                return Err(BlockError("Uptime".to_owned(), "Uptime failed to read uptime string.".to_owned()));
             }
         };
 
         let total_seconds = match uptime.parse::<f64>() {
             Ok(uptime) => uptime as u32,
             Err(e) => {
-                return Err(BlockError(
-                    "Uptime".to_owned(),
-                    format!("Uptime failed to convert uptime float to integer: '{}')", e),
-                ));
+                return Err(BlockError("Uptime".to_owned(), format!("Uptime failed to convert uptime float to integer: '{}')", e)));
             }
         };
 

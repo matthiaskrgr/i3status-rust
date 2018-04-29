@@ -1,18 +1,18 @@
-use std::time::{Duration, Instant};
-use std::process::Command;
-use std::iter::{Cycle, Peekable};
-use std::vec;
-use std::env;
 use chan::Sender;
+use std::env;
+use std::iter::{Cycle, Peekable};
+use std::process::Command;
+use std::time::{Duration, Instant};
+use std::vec;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::button::ButtonWidget;
-use widget::I3BarWidget;
 use input::I3BarEvent;
 use scheduler::Task;
+use widget::I3BarWidget;
+use widgets::button::ButtonWidget;
 
 use uuid::Uuid;
 
@@ -116,8 +116,7 @@ impl Block for Custom {
         let mut update = false;
 
         if let Some(ref on_click) = self.on_click {
-            Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
-                    .args(&["-c", on_click]).output().ok();
+            Command::new(env::var("SHELL").unwrap_or("sh".to_owned())).args(&["-c", on_click]).output().ok();
             update = true;
         }
 

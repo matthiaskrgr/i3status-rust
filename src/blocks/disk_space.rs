@@ -1,14 +1,14 @@
-use std::time::Duration;
-use std::path::Path;
 use chan::Sender;
 use scheduler::Task;
+use std::path::Path;
+use std::time::Duration;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
+use widgets::text::TextWidget;
 
 use uuid::Uuid;
 
@@ -87,7 +87,6 @@ pub struct DiskSpaceConfig {
     /// Diskspace alert in GiB (red)
     #[serde(default = "DiskSpaceConfig::default_alert")]
     pub alert: f64,
-
 }
 
 impl DiskSpaceConfig {
@@ -156,8 +155,7 @@ impl ConfigBlock for DiskSpace {
 
 impl Block for DiskSpace {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let statvfs = Statvfs::for_path(Path::new(self.path.as_str()))
-            .block_error("disk_space", "failed to retrieve statvfs")?;
+        let statvfs = Statvfs::for_path(Path::new(self.path.as_str())).block_error("disk_space", "failed to retrieve statvfs")?;
         let result;
         let converted;
 
@@ -173,12 +171,7 @@ impl Block for DiskSpace {
             //InfoType::Total | InfoType::Used => unimplemented!(),
         }
 
-        self.disk_space.set_text(format!(
-            "{0} {1:.2} {2:?}",
-            self.alias,
-            converted,
-            self.unit
-        ));
+        self.disk_space.set_text(format!("{0} {1:.2} {2:?}", self.alias, converted, self.unit));
 
         let state = self.compute_state(result, self.warning, self.alert);
         self.disk_space.set_state(state);

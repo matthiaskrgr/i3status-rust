@@ -56,7 +56,7 @@ where
 pub struct MapType<T, V>(pub PhantomData<T>, pub PhantomData<V>);
 
 macro_rules! map_type {
-    ( $name:ident, $value:ty; $fromstr_ident:ident => $fromstr_expr:expr ) => {
+    ($name:ident, $value:ty; $fromstr_ident:ident => $fromstr_expr:expr) => {
         #[derive(Deserialize, Debug, Default)]
         struct $name(::std::collections::HashMap<String, $value>);
 
@@ -81,7 +81,7 @@ macro_rules! map_type {
                 $fromstr_expr
             }
         }
-    }
+    };
 }
 
 impl<'de, T, V> DeserializeSeed<'de> for MapType<T, V>
@@ -123,9 +123,7 @@ where
         A: de::SeqAccess<'de>,
     {
         let mut vec: Vec<Self::Value> = Vec::new();
-        while let Some(element) = visitor
-            .next_element_seed(MapType::<T, V>(PhantomData, PhantomData))?
-        {
+        while let Some(element) = visitor.next_element_seed(MapType::<T, V>(PhantomData, PhantomData))? {
             vec.push(element);
         }
 
@@ -161,22 +159,17 @@ where
         let mut combined: Map<String, V> = Map::new();
 
         if let Some(raw_names) = map.remove("name") {
-            combined.extend(
-                raw_names
-                    .deserialize_any(MapType::<T, V>(PhantomData, PhantomData))
-                    .map_err(|e: toml::de::Error| de::Error::custom(e.description()))?,
-            );
+            combined.extend(raw_names
+                .deserialize_any(MapType::<T, V>(PhantomData, PhantomData))
+                .map_err(|e: toml::de::Error| de::Error::custom(e.description()))?);
         }
         if let Some(raw_overrides) = map.remove("overrides") {
-            let overrides: Map<String, V> = Map::<String, V>::deserialize(raw_overrides)
-                .map_err(|e: toml::de::Error| de::Error::custom(e.description()))?;
+            let overrides: Map<String, V> = Map::<String, V>::deserialize(raw_overrides).map_err(|e: toml::de::Error| de::Error::custom(e.description()))?;
             combined.extend(overrides);
         }
 
         if combined.is_empty() {
-            Err(de::Error::custom(
-                "missing all fields (`name`, `overrides`)",
-            ))
+            Err(de::Error::custom("missing all fields (`name`, `overrides`)"))
         } else {
             Ok(combined)
         }

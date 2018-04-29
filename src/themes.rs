@@ -18,7 +18,6 @@ lazy_static! {
         alternating_tint_bg: "#000000".to_owned(),
         alternating_tint_fg: "#000000".to_owned(),
     };
-
     pub static ref SOLARIZED_DARK: Theme = Theme {
         idle_bg: "#002b36".to_owned(),
         idle_fg: "#93a1a1".to_owned(),
@@ -36,7 +35,6 @@ lazy_static! {
         alternating_tint_bg: "#000000".to_owned(),
         alternating_tint_fg: "#000000".to_owned(),
     };
-
     pub static ref MODERN: Theme = Theme {
         idle_bg: "#222D32".to_owned(),
         idle_fg: "#CFD8DC".to_owned(),
@@ -54,7 +52,6 @@ lazy_static! {
         alternating_tint_bg: "#000000".to_owned(),
         alternating_tint_fg: "#000000".to_owned(),
     };
-
     pub static ref PLAIN: Theme = Theme {
         idle_bg: "#000000".to_owned(),
         idle_fg: "#93a1a1".to_owned(),
@@ -72,7 +69,6 @@ lazy_static! {
         alternating_tint_bg: "#000000".to_owned(),
         alternating_tint_fg: "#000000".to_owned(),
     };
-
     pub static ref BAD_WOLF: Theme = Theme {
         idle_bg: "#444444".to_owned(),
         idle_fg: "#f5f5f5".to_owned(),
@@ -90,7 +86,6 @@ lazy_static! {
         alternating_tint_bg: "#000000".to_owned(),
         alternating_tint_fg: "#000000".to_owned(),
     };
-
     pub static ref GRUVBOX_LIGHT: Theme = Theme {
         idle_bg: "#fbf1c7".to_owned(),
         idle_fg: "#3c3836".to_owned(),
@@ -108,7 +103,6 @@ lazy_static! {
         alternating_tint_bg: "#000000".to_owned(),
         alternating_tint_fg: "#000000".to_owned(),
     };
-
     pub static ref GRUVBOX_DARK: Theme = Theme {
         idle_bg: "#282828".to_owned(),
         idle_fg: "#ebdbb2".to_owned(),

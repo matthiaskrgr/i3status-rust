@@ -1,15 +1,15 @@
-use std::time::Duration;
-use std::process::Command;
 use chan::Sender;
 use scheduler::Task;
+use std::process::Command;
+use std::time::Duration;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_opt_duration;
 use errors::*;
-use widgets::button::ButtonWidget;
-use widget::I3BarWidget;
 use input::I3BarEvent;
+use widget::I3BarWidget;
+use widgets::button::ButtonWidget;
 
 use uuid::Uuid;
 
@@ -99,10 +99,7 @@ impl Block for Toggle {
                     &self.command_on
                 };
 
-                Command::new("sh")
-                    .args(&["-c", cmd])
-                    .output()
-                    .block_error("toggle", "failed to run toggle command")?;
+                Command::new("sh").args(&["-c", cmd]).output().block_error("toggle", "failed to run toggle command")?;
             }
         }
 

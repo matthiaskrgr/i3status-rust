@@ -1,14 +1,14 @@
-use std::time::Duration;
-use chan::Sender;
-use scheduler::Task;
 use block::{Block, ConfigBlock};
+use blocks::lib::*;
+use chan::Sender;
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::text::TextWidget;
-use widget::{I3BarWidget, State};
+use scheduler::Task;
+use std::time::Duration;
 use uuid::Uuid;
-use blocks::lib::*;
+use widget::{I3BarWidget, State};
+use widgets::text::TextWidget;
 
 pub struct Battery {
     output: TextWidget,
@@ -124,13 +124,8 @@ impl Block for Battery {
                 // is full, leading to >100% charge.
                 _ => 100,
             };
-        }
-        
-         else {
-            return Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading capacity, charge or energy".to_string(),
-            ));
+        } else {
+            return Err(BlockError("battery".to_string(), "Device does not support reading capacity, charge or energy".to_string()));
         }
 
         let state = read_file("battery", &format!("{}status", self.device_path))?;
@@ -178,8 +173,7 @@ impl Block for Battery {
         // Don't need to display a percentage when the battery is full
         if current_percentage != 100 && state != "Full" {
             match self.show {
-                ShowType::Both => self.output
-                    .set_text(format!("{}% {}:{:02}", current_percentage, hours, minutes)),
+                ShowType::Both => self.output.set_text(format!("{}% {}:{:02}", current_percentage, hours, minutes)),
                 ShowType::Percentage => self.output.set_text(format!("{}%", current_percentage)),
                 ShowType::Time => self.output.set_text(format!("{}:{:02}", hours, minutes)),
             }
