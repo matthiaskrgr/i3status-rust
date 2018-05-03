@@ -9,6 +9,7 @@ mod multi_battery;
 mod custom;
 mod disk_space;
 mod pacman;
+mod pacman2;
 mod temperature;
 mod toggle;
 mod sound;
@@ -34,6 +35,7 @@ use self::multi_battery::*;
 use self::custom::*;
 use self::disk_space::*;
 use self::pacman::*;
+use self::pacman2::*;
 use self::sound::*;
 use self::speedtest::*;
 use self::toggle::*;
@@ -85,6 +87,7 @@ pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_r
             "memory" => Memory,
             "cpu" => Cpu,
             "pacman" => Pacman,
+            "pacman2" => Pacman2,
             "battery" => Battery,
             "multi_battery" => MultiBattery,
             "custom" => Custom,
