@@ -5,6 +5,7 @@ mod memory;
 mod cpu;
 mod music;
 pub mod battery;
+mod multi_battery;
 mod custom;
 mod disk_space;
 mod pacman;
@@ -29,6 +30,7 @@ use self::cpu::*;
 use self::load::*;
 use self::memory::*;
 use self::battery::*;
+use self::multi_battery::*;
 use self::custom::*;
 use self::disk_space::*;
 use self::pacman::*;
@@ -84,6 +86,7 @@ pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_r
             "cpu" => Cpu,
             "pacman" => Pacman,
             "battery" => Battery,
+            "multi_battery" => MultiBattery,
             "custom" => Custom,
             "disk_space" => DiskSpace,
             "toggle" => Toggle,
